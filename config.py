@@ -1,6 +1,13 @@
 import json
+import os
+import sys
 
-CONFIG_PATH = "config.json"
+def _get_base_dir():
+    if getattr(sys, 'frozen', False):
+        return os.path.dirname(sys.executable)
+    return os.path.dirname(os.path.abspath(__file__))
+
+CONFIG_PATH = os.path.join(_get_base_dir(), "config.json")
 
 _default_config = {
     "ip": "127.0.0.1",
