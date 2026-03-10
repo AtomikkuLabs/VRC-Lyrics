@@ -1,6 +1,8 @@
+import os
+import config
 import spotipy
-from . import BasePlayback
 import requests
+from . import BasePlayback
 
 redirect_uri = "http://127.0.0.1:5000/callback"
 scope = "user-read-playback-state"
@@ -9,7 +11,8 @@ scope = "user-read-playback-state"
 class SpotifyPlayback(BasePlayback):
     def __init__(self, client_id, lyrics):
         super().__init__(lyrics)
-        auth_manager = spotipy.SpotifyPKCE(client_id=client_id, redirect_uri=redirect_uri, scope=scope)
+        cache_path = os.path.join(config.get_base_dir(), ".cache")
+        auth_manager = spotipy.SpotifyPKCE(client_id=client_id, redirect_uri=redirect_uri, scope=scope, cache_path=cache_path)
         self.spotify = spotipy.Spotify(auth_manager=auth_manager)
         self.id = None
         self.album_cover = None
