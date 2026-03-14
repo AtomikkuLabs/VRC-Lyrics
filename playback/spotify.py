@@ -1,3 +1,4 @@
+import logging
 import os
 import config
 import spotipy
@@ -9,10 +10,17 @@ scope = "user-read-playback-state"
 
 
 class SpotifyPlayback(BasePlayback):
-    def __init__(self, client_id, lyrics):
-        super().__init__(lyrics)
-        cache_path = os.path.join(config.get_base_dir(), ".cache")
-        auth_manager = spotipy.SpotifyPKCE(client_id=client_id, redirect_uri=redirect_uri, scope=scope, cache_path=cache_path)
+    def __init__(self, client_id):
+        super().__init__()
+        self._cache_path = os.path.join(config.get_base_dir(), ".cache")
+        auth_manager = spotipy.SpotifyPKCE(client_id=client_id, redirect_uri=redirect_uri, scope=scope, cache_path=self._cache_path)
+        try:
+            auth_manager.get_access_token()
+        except spotipy.SpotifyOauthError:
+            logging.warning("Spotify auth failed, clearing cache and retrying login")
+            if os.path.exists(self._cache_path):
+                os.remove(self._cache_path)
+            auth_manager.get_access_token()
         self.spotify = spotipy.Spotify(auth_manager=auth_manager)
         self.id = None
         self.album_cover = None
@@ -21,11 +29,17 @@ class SpotifyPlayback(BasePlayback):
     def fetch_playback(self):
         try:
             data = self.spotify.current_playback()
-        except requests.exceptions.ConnectionError:
-            try:
-                data = self.spotify.current_playback()
-            except Exception:
-                data = None
+        except (requests.exceptions.ConnectionError, requests.exceptions.ReadTimeout):
+            logging.warning("Spotify connection error, will retry")
+            return False
+        except spotipy.SpotifyException as e:
+            if e.http_status == 401:
+                logging.warning("Spotify auth expired (401), clearing cache for re-auth")
+                if os.path.exists(self._cache_path):
+                    os.remove(self._cache_path)
+                return None
+            logging.warning("Spotify API error (will retry): %s", e)
+            return False
         if not data or not data['item']:
             return False
 

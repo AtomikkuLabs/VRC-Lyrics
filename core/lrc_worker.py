@@ -1,21 +1,58 @@
 import time
+import logging
+import requests
 import config
 from lyrics import LRCLibLyrics, SpotifyLyrics, SpotifyAuthError
 from playback import SpotifyPlayback, WindowsPlayback
 from .messages import LyricUpdate, SongUpdate, IsPlayingUpdate
 
 
+def _validate_spotify_client_id(client_id):
+    """Returns True if valid, False if invalid_client."""
+    try:
+        resp = requests.post(
+            "https://accounts.spotify.com/api/token",
+            data={
+                "client_id": client_id,
+                "grant_type": "authorization_code",
+                "code": "invalid_code",
+                "redirect_uri": "http://127.0.0.1:5000/callback",
+                "code_verifier": "x",
+            },
+            headers={"Content-Type": "application/x-www-form-urlencoded"},
+            timeout=10,
+        )
+        if resp.status_code == 400 and resp.json().get("error") == "invalid_client":
+            return False
+    except Exception:
+        pass
+    return True
+
+
 def poll_playback(playback, song_data_queue, running, handlers):
     previous_position = 0
     previous_key = None
+    connected = False
+
+    handlers.info("Connected, waiting for data...")
 
     while running.is_set():
         previous_is_playing = playback.is_playing
-        fetch_success = playback.fetch_playback()
+        result = playback.fetch_playback()
 
-        if not fetch_success:
+        if result is None:
+            handlers.error("Spotify auth expired - please restart and log in again")
+            running.clear()
+            return
+
+        if result is False:
             time.sleep(1)
             continue
+
+        if not connected:
+            connected = True
+            logging.info("Connected to playback provider")
+            handlers.dismiss()
 
         handlers.progress(progress=playback.progress_ms, duration=playback.duration_ms)
 
@@ -73,24 +110,33 @@ def lrc(song_data_queue, running, handlers):
     playback_provider = config.get('playback_provider')
     lyric_provider = config.get('lyric_provider')
 
+    match playback_provider:
+        case "Spotify":
+            import os
+            client_id = config.get('client_id')
+            if not _validate_spotify_client_id(client_id):
+                logging.error("Invalid Spotify client_id: %s", client_id)
+                handlers.error("Invalid Spotify Client ID")
+                return
+            cache_path = os.path.join(config.get_base_dir(), ".cache")
+            if not os.path.exists(cache_path):
+                logging.info("No Spotify auth cache found, browser login required")
+                handlers.info("Please log in to Spotify in the browser")
+            playback = SpotifyPlayback(client_id=client_id)
+
+        case "Windows":
+            playback = WindowsPlayback()
+
     match lyric_provider:
         case "Spotify":
             try:
                 sp_dc = config.get('sp_dc')
-                lyrics = SpotifyLyrics(sp_dc=sp_dc)
+                playback.lyrics_provider = SpotifyLyrics(sp_dc=sp_dc, handlers=handlers)
             except SpotifyAuthError:
                 handlers.error("Invalid sp_dc cookie")
 
         case "LRCLib":
-            lyrics = LRCLibLyrics()
-
-    match playback_provider:
-        case "Spotify":
-            client_id = config.get('client_id')
-            playback = SpotifyPlayback(client_id=client_id, lyrics=lyrics)
-
-        case "Windows":
-            playback = WindowsPlayback(lyrics=lyrics)
+            playback.lyrics_provider = LRCLibLyrics(handlers=handlers)
 
     if playback:
         poll_playback(playback, song_data_queue, running, handlers)

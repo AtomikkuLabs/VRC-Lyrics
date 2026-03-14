@@ -5,8 +5,8 @@ from winsdk.windows.media.control import GlobalSystemMediaTransportControlsSessi
 
 
 class WindowsPlayback(BasePlayback):
-    def __init__(self, lyrics):
-        super().__init__(lyrics)
+    def __init__(self):
+        super().__init__()
         self._last_fetch_time = None
 
     def fetch_playback(self):

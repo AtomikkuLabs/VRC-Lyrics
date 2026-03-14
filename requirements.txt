@@ -1,8 +1,8 @@
 python-osc~=1.9.3
 lrclibapi~=0.3.1
-spotipy~=2.25.1
-flet~=0.27.6
-flet-desktop~=0.27.6
+spotipy~=2.26.0
+flet~=0.82.2
+flet-desktop~=0.82.2
 winsdk~=1.0.0b10
 requests~=2.32.3
 pyppeteer~=2.0.0

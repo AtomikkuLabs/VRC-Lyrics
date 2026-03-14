@@ -1,40 +1,43 @@
 import flet as ft
-from flet import Colors, Icons
 
 
 def build_title_bar(app):
+    app.play_stop_button = ft.IconButton(
+        on_click=lambda e: app.toggle_service(),
+        padding=0,
+        icon_size=34
+    )
+
     return ft.WindowDragArea(
         maximizable=False,
         content=ft.Container(
-            bgcolor=Colors.BLACK45,
+            bgcolor=ft.Colors.BLACK45,
             padding=10,
             content=ft.Row(
                 vertical_alignment=ft.CrossAxisAlignment.CENTER,
                 controls=[
                     ft.Container(
                         expand=True,
-                        alignment=ft.alignment.center_left,
-                        content=ft.IconButton(
-                            icon=Icons.SETTINGS,
-                            style=ft.ButtonStyle(
-                                icon_color={
-                                    ft.ControlState.DEFAULT: ft.Colors.WHITE70,
-                                    ft.ControlState.HOVERED: ft.Colors.WHITE,
-                                },
-                                overlay_color="transparent",
-                            ),
-                            tooltip="Settings",
-                            on_click=lambda e: app.toggle_settings(),
+                        alignment=ft.Alignment(-1, 0),
+                        content=ft.Row(
+                            spacing=0,
+                            controls=[
+                                ft.IconButton(
+                                    icon=ft.Icons.SETTINGS,
+                                    tooltip="Settings",
+                                    on_click=lambda e: app.toggle_settings(),
+                                ),
+                                app.play_stop_button,
+                            ]
                         )
                     ),
 
                     ft.Container(
                         expand=True,
-                        alignment=ft.alignment.center,
+                        alignment=ft.Alignment(0, 0),
                         content=ft.Text(
                             "VRC LYRICS",
                             size=22,
-                            color=app.text_color,
                             weight=ft.FontWeight.BOLD,
                             text_align=ft.TextAlign.CENTER
                         )
@@ -42,33 +45,19 @@ def build_title_bar(app):
 
                     ft.Container(
                         expand=True,
-                        alignment=ft.alignment.center_right,
+                        alignment=ft.Alignment(1, 0),
                         content=ft.Row(
                             alignment=ft.MainAxisAlignment.END,
                             controls=[
                                 ft.IconButton(
-                                    icon=Icons.REMOVE,
-                                    style=ft.ButtonStyle(
-                                        icon_color={
-                                            ft.ControlState.DEFAULT: ft.Colors.WHITE70,
-                                            ft.ControlState.HOVERED: ft.Colors.WHITE,
-                                        },
-                                        overlay_color="transparent",
-                                    ),
+                                    icon=ft.Icons.REMOVE,
                                     tooltip="Minimize",
                                     on_click=lambda e: app.minimize_app()
                                 ),
                                 ft.IconButton(
-                                    icon=Icons.CLOSE,
-                                    style=ft.ButtonStyle(
-                                        icon_color={
-                                            ft.ControlState.DEFAULT: ft.Colors.WHITE70,
-                                            ft.ControlState.HOVERED: ft.Colors.WHITE,
-                                        },
-                                        overlay_color="transparent",
-                                    ),
+                                    icon=ft.Icons.CLOSE,
                                     tooltip="Close",
-                                    on_click=lambda e: app.close_app()
+                                    on_click=app.close_app
                                 )
                             ]
                         )

@@ -1,12 +1,13 @@
 import queue
 import config
+import logging
 import threading
 from core import lrc, ChatboxManager, ParamManager
 
 
 class ServiceManager:
     def __init__(self):
-        self.running = threading.Event()
+        self.running = None
         self.lrc_thread = None
         self.osc_thread = None
         self.queue = queue.Queue()
@@ -14,33 +15,33 @@ class ServiceManager:
 
     def start(self, handlers):
         with self.lock:
-            if self.running.is_set():
+            if self.running and self.running.is_set():
                 return
 
-            print("[ServiceManager] Starting Services...")
+            handlers.reset()
+            logging.info("Starting Services...")
+            handlers.info("Starting App...")
+            self.running = threading.Event()
             self.running.set()
             ip = config.get('ip')
             port = config.get('port')
 
-            self.lrc_thread = threading.Thread(target=lambda: self._run_lrc(handlers), daemon=True)
+            self.lrc_thread = threading.Thread(target=lambda: self._run_lrc(handlers, self.running), daemon=True)
             self.osc_thread = threading.Thread(target=lambda: self._create_osc_manager(ip, port).run(), daemon=True)
 
             self.lrc_thread.start()
             self.osc_thread.start()
 
-    def stop(self):
+    def stop(self, handlers):
         with self.lock:
-            if not self.running.is_set():
+            if not self.running or not self.running.is_set():
                 return
 
-            print("[ServiceManager] Stopping Services...")
+            logging.info("Stopping Services...")
+            handlers.dismiss()
+            handlers.reset()
             self.running.clear()
             self.queue.put(None)
-
-            if self.lrc_thread and self.lrc_thread.is_alive():
-                self.lrc_thread.join()
-            if self.osc_thread and self.osc_thread.is_alive():
-                self.osc_thread.join()
 
             self.lrc_thread, self.osc_thread = None, None
 
@@ -50,21 +51,23 @@ class ServiceManager:
                 except queue.Empty:
                     break
 
-    def _run_lrc(self, handlers):
+    def _run_lrc(self, handlers, running):
         try:
-            return lrc(self.queue, self.running, handlers)
+            lrc(self.queue, running, handlers)
         except Exception as e:
-            print(f"[ServiceManager] Fatal error in LRC: {e}")
+            logging.exception(f"Fatal error in LRC: {e}")
             if "Invalid client_id" in str(e):
-                handlers.error("Invalid Spotify Client ID. Please check your config.")
+                handlers.error("Invalid Spotify Client ID")
             else:
                 handlers.error(f"Program error occurred: {e}")
-            self.running.clear()
+        finally:
+            if running.is_set():
+                handlers.app.toggle_service()
 
     def _create_osc_manager(self, ip, port):
         if port == 9000:
-            print("[ServiceManager] Using ChatboxManager")
+            logging.info("Using ChatboxManager")
             return ChatboxManager(ip, port, self.queue, self.running)
         else:
-            print("[ServiceManager] Using ParamManager")
+            logging.info("Using ParamManager")
             return ParamManager(ip, port, self.queue, self.running)

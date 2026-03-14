@@ -3,11 +3,8 @@ from flet import Colors, Icons
 
 
 class Content:
-    def __init__(self, page, text_color, bg_color, accent_color):
+    def __init__(self, page):
         self.page = page
-        self.text_color = text_color
-        self.bg_color = bg_color
-        self.accent_color = accent_color
         self.lyrics_text = None
         self.current_time = None
         self.total_time = None
@@ -18,12 +15,17 @@ class Content:
         self.album_art_icon = None
         self.album_art_container = None
 
+    def _update(self, *controls):
+        try:
+            self.page.loop.call_soon_threadsafe(self.page.update, *controls)
+        except RuntimeError:
+            pass
+
     def build(self):
         self.song_title = ft.Text(
             "Song Title",
             size=24,
             weight=ft.FontWeight.BOLD,
-            color=self.text_color,
             text_align=ft.TextAlign.CENTER,
             max_lines=1,
             overflow=ft.TextOverflow.ELLIPSIS,
@@ -52,7 +54,6 @@ class Content:
         self.progress_bar = ft.ProgressBar(
             width=350,
             value=0.0,
-            color=self.accent_color,
             bgcolor=Colors.GREY_800
         )
         self.current_time = ft.Text("0:00", size=12, color=Colors.GREY_300)
@@ -80,7 +81,6 @@ class Content:
         self.lyrics_text = ft.Text(
             "Lyrics will appear here...",
             size=15,
-            color=self.text_color,
             text_align=ft.TextAlign.CENTER,
             max_lines=1,
             overflow=ft.TextOverflow.ELLIPSIS,
@@ -93,12 +93,11 @@ class Content:
             border_radius=10,
             bgcolor=Colors.GREY_800,
             padding=10,
-            alignment=ft.alignment.center
+            alignment=ft.Alignment(0, 0)
         )
 
         return ft.Container(
             expand=True,
-            bgcolor=self.bg_color,
             content=ft.Column(
                 controls=[
                     self.build_album_art(),
@@ -115,7 +114,7 @@ class Content:
         self.album_art_icon = ft.Container(
             border_radius=10,
             bgcolor=Colors.GREY_800,
-            alignment=ft.alignment.center,
+            alignment=ft.Alignment(0, 0),
             content=ft.Icon(Icons.MUSIC_NOTE, size=60, color=Colors.GREY_500),
             visible=True
         )
@@ -124,7 +123,7 @@ class Content:
             src="",
             width=165,
             height=165,
-            fit=ft.ImageFit.COVER,
+            fit=ft.BoxFit.COVER,
             border_radius=10,
             visible=False
         )
@@ -149,7 +148,7 @@ class Content:
             self.album_art.visible = False
             self.album_art_icon.visible = True
 
-        self.page.update()
+        self._update(self.song_title, self.artist, self.album_art, self.album_art_icon)
 
     def update_progress(self, progress, duration):
         if progress is not None and duration:
@@ -158,22 +157,19 @@ class Content:
 
             if duration_seconds > 0:
                 self.progress_bar.value = progress_seconds / duration_seconds
-                current_time = format_time(progress_seconds)
-                total_time = format_time(duration_seconds)
-                self.current_time.value = current_time
-                self.total_time.value = total_time
+                self.current_time.value = format_time(progress_seconds)
+                self.total_time.value = format_time(duration_seconds)
 
-            self.page.update()
+            self._update(self.progress_bar, self.current_time, self.total_time)
 
     def update_lyric(self, lyric):
         self.lyrics_text.value = lyric or ""
-        self.page.update()
+        self._update(self.lyrics_text)
 
     def reset(self):
         self.update_track_info(title="Song Title", artist="Artist Name", album_art=None)
         self.update_lyric("Lyrics will appear here...")
         self.update_progress(progress=0, duration=1)
-        self.page.update()
 
 
 def format_time(seconds):

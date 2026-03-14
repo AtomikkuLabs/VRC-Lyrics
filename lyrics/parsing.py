@@ -1,3 +1,6 @@
+import logging
+
+
 def lrc_to_dictionary(lrc):
     if not lrc:
         return {}
@@ -19,7 +22,7 @@ def lrc_to_dictionary(lrc):
             lrc_dict[int(total_ms)] = lyric
         except (ValueError, IndexError):
             # Edge cases
-            print(f"Skipping malformed LRC line: {line}")
+            logging.warning(f"Skipping malformed LRC line: {line}")
             continue
 
     return lrc_dict
