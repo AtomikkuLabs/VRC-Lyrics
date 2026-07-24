@@ -1,4 +1,5 @@
 import queue
+import logging
 import config
 from pythonosc.udp_client import SimpleUDPClient
 from .messages import LyricUpdate, SongUpdate, IsPlayingUpdate
@@ -59,15 +60,34 @@ class BaseOSCManager:
             try:
                 msg = self.song_data_queue.get(timeout=10)
             except queue.Empty:
-                self.send_osc_message()
+                self._safe(self.send_osc_message)
             else:
                 if msg is None:
                     break
 
                 self.song_data_queue.put(msg)
-                self.process_queue_messages()
+                self._safe(self.process_queue_messages)
 
-        self.client.send_message(self.osc_path, ["", True, False])
+        self._safe(lambda: self.client.send_message(self.osc_path, ["", True, False]))
+
+    def _safe(self, fn):
+        """Runs fn, logging and swallowing errors instead of letting them kill this thread.
+
+        OSC sends can fail transiently (e.g. VRChat not listening yet during a
+        world load, or a dropped connection) - without this, an unhandled
+        OSError here silently kills the OSC thread for the rest of the
+        session, since nothing else supervises or restarts it.
+        """
+        try:
+            fn()
+        except OSError as e:
+            logging.warning("OSC send failed, will retry: %s", e)
+        except Exception:
+            # Same reasoning, one level out: _safe also wraps
+            # process_queue_messages, which parses messages and can fail in ways
+            # that aren't OSError. Nothing supervises this thread either, so a
+            # single bad message must not end OSC output for the session.
+            logging.exception("OSC worker error, continuing")
 
 
 class ChatboxManager(BaseOSCManager):
