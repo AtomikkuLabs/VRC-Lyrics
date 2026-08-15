@@ -25,5 +25,10 @@ class LRCLibLyrics:
         except requests.exceptions.ConnectionError:
             logging.warning("Connection failed, skipping lyrics fetch")
             self.handlers.error("Connection failed, skipping lyrics fetch")
+        except Exception:
+            # A bad result from the lyrics provider must not kill the LRC thread:
+            # no lyrics for this song is recoverable, a dead service is not.
+            logging.exception("Lyrics lookup failed, skipping lyrics for this song")
+            self.handlers.error("Lyrics lookup failed, skipping lyrics for this song")
 
         return None
