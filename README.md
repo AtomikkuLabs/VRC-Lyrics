@@ -6,7 +6,7 @@
    <a href="https://github.com/BigAtomikku/VRC-Lyrics/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge" alt="MIT License"></a>
    <a href="https://github.com/BigAtomikku/VRC-Lyrics/releases/latest"><img src="https://img.shields.io/github/downloads/BigAtomikku/VRC-Lyrics/total?style=for-the-badge&logo=github" alt="Repo Downloads"></a>
    <a href="https://github.com/BigAtomikku/VRC-Lyrics/releases/latest"><img src="https://img.shields.io/github/v/release/BigAtomikku/VRC-Lyrics?style=for-the-badge&label=Latest&logo=github" alt="Latest Release"></a>
-   <a href="https://www.virustotal.com/gui/file/6f2985ebb6b045cf7cea5c186cbd7582a6d149e0d83379a2f4e90e724d383999?nocache=1"><img src="https://custom-icon-badges.herokuapp.com/badge/-Scan%20at%20VirusTotal-blue?style=for-the-badge&logo=virustotal&logoColor=white" alt="Virus Total Scan"></a>
+   <a href="https://www.virustotal.com/gui/file/f17a53eea0a69b5295043fc10f80221108a1dce9469f7bc7adc7f700a60e22a8?nocache=1"><img src="https://custom-icon-badges.herokuapp.com/badge/-Scan%20at%20VirusTotal-blue?style=for-the-badge&logo=virustotal&logoColor=white" alt="Virus Total Scan"></a>
    <a href="https://ko-fi.com/bigatomikku"><img alt="Ko-Fi" src="https://img.shields.io/badge/Ko--fi-F16061?style=for-the-badge&logo=ko-fi&logoColor=white" alt="Ko-fi"></a>
 </p>
 
