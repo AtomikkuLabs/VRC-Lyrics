@@ -18,9 +18,10 @@ class LRCLibLyrics:
                 title = ' '.join(words[:wc])
                 for artist in playback.artists:
                     results = self.lyrics_api.search_lyrics(track_name=title, artist_name=artist['name'])
-                    filtered = [r for r in results if r.synced_lyrics and abs(r.duration - duration) <= 3]
-                    if filtered:
-                        return lrc_to_dictionary(filtered[0].synced_lyrics)
+                    candidates = [r for r in results if r.synced_lyrics and r.duration is not None and abs(r.duration - duration) <= 3]
+                    if candidates:
+                        best = min(candidates, key=lambda r: abs(r.duration - duration))
+                        return lrc_to_dictionary(best.synced_lyrics)
         except requests.exceptions.ConnectionError:
             logging.warning("Connection failed, skipping lyrics fetch")
             self.handlers.error("Connection failed, skipping lyrics fetch")
