@@ -7,3 +7,4 @@ compile.txt
 __pycache__
 setup.py
 gui/__pycache__/
+output.log
