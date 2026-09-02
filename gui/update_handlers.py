@@ -7,6 +7,7 @@ class UpdateHandlers:
         self.app = app
         self._info_snack = None
         self._info_message = None
+        self._error_snack = None
 
     def track_info(self, title, artist, album_art=None):
         self.app.content.update_track_info(title, artist, album_art)
@@ -26,12 +27,15 @@ class UpdateHandlers:
         container = self.app.content_container
         return bool(container and container.visible)
 
-    def _close_info_snack(self):
-        snack = self._info_snack
-        self._info_snack = None
+    def _close_snack(self, attr):
+        snack = getattr(self, attr)
+        setattr(self, attr, None)
         if snack and snack.open:
             snack.open = False
             snack.update()
+
+    def _close_info_snack(self):
+        self._close_snack("_info_snack")
 
     def _render_info(self):
         """Show the active startup message, but only on the home page."""
@@ -75,6 +79,9 @@ class UpdateHandlers:
             # An error ends the startup sequence; clear its info message.
             self._info_message = None
             self._close_info_snack()
+            # Only one error on screen at a time: it replaces the previous.
+            self._close_snack("_error_snack")
+            self._error_snack = snack
             self.app.page.show_dialog(snack)
 
         self._run_on_ui(show)
@@ -86,6 +93,7 @@ class UpdateHandlers:
         def clear():
             self._info_message = None
             self._close_info_snack()
+            self._close_snack("_error_snack")
 
         self._run_on_ui(clear)
 

@@ -19,6 +19,7 @@ class ServiceManager:
                 return
 
             handlers.reset()
+            handlers.dismiss()
             logging.info("Starting Services...")
             handlers.info("Starting App...")
             self.running = threading.Event()
