@@ -1,7 +1,7 @@
 import time
 import asyncio
 from . import BasePlayback
-from winsdk.windows.media.control import GlobalSystemMediaTransportControlsSessionManager as MediaManager
+from winrt.windows.media.control import GlobalSystemMediaTransportControlsSessionManager as MediaManager
 
 
 class WindowsPlayback(BasePlayback):

@@ -3,6 +3,7 @@ lrclibapi~=0.3.1
 spotipy~=2.26.0
 flet~=0.86.5
 flet-desktop~=0.86.5
-winsdk~=1.0.0b10
+winrt-Windows.Media.Control
+winrt-Windows.Foundation
 requests~=2.34.2
 pyppeteer~=2.0.0
