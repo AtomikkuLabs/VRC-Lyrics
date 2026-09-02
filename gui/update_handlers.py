@@ -16,6 +16,19 @@ class UpdateHandlers:
     def lyric(self, lyric):
         self.app.content.update_lyric(lyric)
 
+    def _run_on_ui(self, fn):
+        page = self.app.page
+        if page and page.loop:
+            page.loop.call_soon_threadsafe(fn)
+
+    def _close_info(self):
+        """Close the current startup/info snackbar, if any. Runs on the UI loop."""
+        snack = self._info_snack
+        self._info_snack = None
+        if snack and snack.open:
+            snack.open = False
+            snack.update()
+
     def info(self, message):
         logging.info("%s", message)
 
@@ -25,11 +38,14 @@ class UpdateHandlers:
             margin=ft.Margin(40, 0, 40, 365),
             persist=True,
         )
-        self._info_snack = snack
-        if self.app.page and self.app.page.loop:
-            self.app.page.loop.call_soon_threadsafe(
-                lambda: self.app.page.show_dialog(snack)
-            )
+
+        def show():
+            # Only one startup message on screen at a time: replace the previous.
+            self._close_info()
+            self._info_snack = snack
+            self.app.page.show_dialog(snack)
+
+        self._run_on_ui(show)
 
     def error(self, message):
         logging.error("%s", message)
@@ -43,20 +59,16 @@ class UpdateHandlers:
             show_close_icon=True,
             close_icon_color=ft.Colors.WHITE,
         )
-        if self.app.page and self.app.page.loop:
-            self.app.page.loop.call_soon_threadsafe(
-                lambda: self.app.page.show_dialog(snack)
-            )
+
+        def show():
+            # An error ends the startup sequence; clear its info message.
+            self._close_info()
+            self.app.page.show_dialog(snack)
+
+        self._run_on_ui(show)
 
     def reset(self):
         self.app.content.reset()
 
     def dismiss(self):
-        def update_ui():
-            if self._info_snack:
-                self._info_snack.open = False
-                self._info_snack = None
-                self.app.page.update()
-
-        if self.app.page and self.app.page.loop:
-            self.app.page.loop.call_soon_threadsafe(update_ui)
+        self._run_on_ui(self._close_info)
