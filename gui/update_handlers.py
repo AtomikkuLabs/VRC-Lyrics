@@ -6,6 +6,7 @@ class UpdateHandlers:
     def __init__(self, app):
         self.app = app
         self._info_snack = None
+        self._info_message = None
 
     def track_info(self, title, artist, album_art=None):
         self.app.content.update_track_info(title, artist, album_art)
@@ -21,29 +22,39 @@ class UpdateHandlers:
         if page and page.loop:
             page.loop.call_soon_threadsafe(fn)
 
-    def _close_info(self):
-        """Close the current startup/info snackbar, if any. Runs on the UI loop."""
+    def _home_visible(self):
+        container = self.app.content_container
+        return bool(container and container.visible)
+
+    def _close_info_snack(self):
         snack = self._info_snack
         self._info_snack = None
         if snack and snack.open:
             snack.open = False
             snack.update()
 
-    def info(self, message):
-        logging.info("%s", message)
+    def _render_info(self):
+        """Show the active startup message, but only on the home page."""
+        self._close_info_snack()
+        if self._info_message is None or not self._home_visible():
+            return
 
         snack = ft.SnackBar(
-            ft.Text(message, color=ft.Colors.BLACK),
+            ft.Text(self._info_message, color=ft.Colors.BLACK),
             behavior=ft.SnackBarBehavior.FLOATING,
             margin=ft.Margin(40, 0, 40, 365),
             persist=True,
         )
+        self._info_snack = snack
+        self.app.page.show_dialog(snack)
+
+    def info(self, message):
+        logging.info("%s", message)
 
         def show():
-            # Only one startup message on screen at a time: replace the previous.
-            self._close_info()
-            self._info_snack = snack
-            self.app.page.show_dialog(snack)
+            # Only one startup message at a time: it replaces the previous.
+            self._info_message = message
+            self._render_info()
 
         self._run_on_ui(show)
 
@@ -62,7 +73,8 @@ class UpdateHandlers:
 
         def show():
             # An error ends the startup sequence; clear its info message.
-            self._close_info()
+            self._info_message = None
+            self._close_info_snack()
             self.app.page.show_dialog(snack)
 
         self._run_on_ui(show)
@@ -71,4 +83,12 @@ class UpdateHandlers:
         self.app.content.reset()
 
     def dismiss(self):
-        self._run_on_ui(self._close_info)
+        def clear():
+            self._info_message = None
+            self._close_info_snack()
+
+        self._run_on_ui(clear)
+
+    def page_changed(self):
+        """Re-evaluate whether the startup message should be on screen."""
+        self._run_on_ui(self._render_info)

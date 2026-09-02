@@ -107,6 +107,7 @@ class SpotifyOSCApp:
         self.settings_container.update()
         self.content_container.visible = not self.content_container.visible
         self.content_container.update()
+        self.handlers.page_changed()
 
         if changed == 1:
             was_running = self.service.running and self.service.running.is_set()
