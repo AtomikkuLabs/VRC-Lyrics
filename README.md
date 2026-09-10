@@ -80,7 +80,7 @@ Integrates with TTS Voice Wizard! (requires pre-release v1.6.8.5+).
    - Limitations:
      - Only syncs from the beginning of a changed track.
      - Scrubbing is not supported.
-#### Spotify
+#### Spotify (Requires Spotify Premium)
    - Connects via Spotify Web API.
    - **Requires** a Spotify Developer Application:
      1. Visit the [Spotify Developer Dashboard](https://developer.spotify.com/dashboard)
